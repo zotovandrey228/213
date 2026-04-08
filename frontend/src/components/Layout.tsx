@@ -36,7 +36,7 @@ export default function Layout() {
           )}
         </div>
         <div className="navbar-user">
-          <span className="user-badge role-{user?.role}">
+          <span className={`user-badge role-${user?.role}`}>
             <span className="user-name">{user?.username}</span>
             <span className={`role-tag role-${user?.role}`}>{user?.role}</span>
           </span>

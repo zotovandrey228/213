@@ -2,9 +2,7 @@ import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as TelegramBot from 'node-telegram-bot-api';
 import axios from 'axios';
-import * as fs from 'fs';
-import * as https from 'https';
-import * as path from 'path';
+import * as FormData from 'form-data';
 import { UsersService } from '../users/users.service';
 import { CartridgesService } from '../cartridges/cartridges.service';
 import { WorksService } from '../works/works.service';
@@ -196,7 +194,6 @@ export class TelegramService implements OnModuleInit {
         });
         const audioBuffer = Buffer.from(response.data);
 
-        const FormData = require('form-data');
         const form = new FormData();
         form.append('file', audioBuffer, {
           filename: 'voice.ogg',
