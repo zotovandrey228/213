@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import CartridgesPage from './pages/CartridgesPage';
 import CartridgeDetailPage from './pages/CartridgeDetailPage';
+import CreateRecordPage from './pages/CreateRecordPage';
+import ChangeStatusPage from './pages/ChangeStatusPage';
 import AdminPage from './pages/AdminPage';
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
@@ -22,6 +24,8 @@ function App() {
           <Route index element={<Navigate to="/cartridges" replace />} />
           <Route path="cartridges" element={<CartridgesPage />} />
           <Route path="cartridges/:id" element={<CartridgeDetailPage />} />
+          <Route path="cartridges/:id/new-record" element={<CreateRecordPage />} />
+          <Route path="cartridges/:id/change-status" element={<ChangeStatusPage />} />
           <Route
             path="admin"
             element={

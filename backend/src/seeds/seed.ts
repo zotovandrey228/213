@@ -4,8 +4,10 @@ import * as bcrypt from 'bcrypt';
 import * as dotenv from 'dotenv';
 import { User } from '../users/user.entity';
 import { Cartridge } from '../cartridges/cartridge.entity';
+import { CartridgeStatusLog } from '../cartridges/cartridge-status-log.entity';
 import { Work } from '../works/work.entity';
 import { Note } from '../notes/note.entity';
+import { Region } from '../regions/region.entity';
 
 dotenv.config();
 
@@ -16,7 +18,7 @@ const AppDataSource = new DataSource({
   username: process.env.DB_USERNAME || 'sa',
   password: process.env.DB_PASSWORD || 'YourStrong@Password123',
   database: process.env.DB_DATABASE || 'cartridge_db',
-  entities: [User, Cartridge, Work, Note],
+  entities: [User, Cartridge, CartridgeStatusLog, Work, Note, Region],
   synchronize: true,
   options: {
     encrypt: false,

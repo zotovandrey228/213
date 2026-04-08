@@ -23,6 +23,7 @@ export class WorksService {
     const work = this.worksRepo.create({
       cartridge: { id: dto.cartridge_id } as any,
       description: dto.description,
+      note: dto.note?.trim() || null,
       performed_at: new Date(dto.performed_at),
       performed_by: { id: dto.performed_by_id ?? userId } as any,
     });

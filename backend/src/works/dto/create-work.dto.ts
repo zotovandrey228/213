@@ -11,6 +11,10 @@ export class CreateWorkDto {
   performed_at: string;
 
   @IsOptional()
+  @IsString()
+  note?: string;
+
+  @IsOptional()
   @IsInt()
   performed_by_id?: number;
 }

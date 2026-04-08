@@ -21,7 +21,7 @@ export default function LoginPage() {
       setAuth(res.data.access_token, res.data.user);
       navigate('/cartridges');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid credentials');
+      setError(err.response?.data?.message || 'Неверный логин или пароль');
     } finally {
       setLoading(false);
     }
@@ -33,35 +33,35 @@ export default function LoginPage() {
         <div className="login-header">
           <span className="login-icon">🖨️</span>
           <h1>CartridgeMS</h1>
-          <p>Cartridge Management System</p>
+          <p>Система учета картриджей</p>
         </div>
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="username">Username</label>
+            <label htmlFor="username">Логин</label>
             <input
               id="username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
+              placeholder="Введите логин"
               required
               autoFocus
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">Пароль</label>
             <input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
+              placeholder="Введите пароль"
               required
             />
           </div>
           {error && <div className="error-banner">{error}</div>}
           <button type="submit" className="btn-primary btn-full" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Вход...' : 'Войти'}
           </button>
         </form>
       </div>

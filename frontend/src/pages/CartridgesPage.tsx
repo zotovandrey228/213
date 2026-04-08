@@ -9,8 +9,17 @@ interface Cartridge {
   name: string;
   model: string;
   serial_number?: string;
+  formatted_number?: string;
+  status: 'refill' | 'ready_to_install' | 'installed' | 'broken';
   created_at: string;
 }
+
+const statusLabel: Record<Cartridge['status'], string> = {
+  refill: 'На заправке',
+  ready_to_install: 'Готов к установке',
+  installed: 'Установлен',
+  broken: 'Сломан',
+};
 
 export default function CartridgesPage() {
   const [cartridges, setCartridges] = useState<Cartridge[]>([]);
@@ -30,7 +39,7 @@ export default function CartridgesPage() {
       const res = await getCartridges(q);
       setCartridges(res.data);
     } catch {
-      setError('Failed to load cartridges');
+      setError('Не удалось загрузить картриджи');
     } finally {
       setLoading(false);
     }
@@ -55,19 +64,19 @@ export default function CartridgesPage() {
       setForm({ name: '', model: '', serial_number: '' });
       fetchCartridges(search || undefined);
     } catch (err: any) {
-      setFormError(err.response?.data?.message || 'Failed to create cartridge');
+      setFormError(err.response?.data?.message || 'Не удалось создать картридж');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`Delete cartridge "${name}"? This will also remove all works and notes.`)) return;
+    if (!confirm(`Удалить картридж "${name}"? Также будут удалены все работы и примечания.`)) return;
     try {
       await deleteCartridge(id);
       setCartridges((prev) => prev.filter((c) => c.id !== id));
     } catch {
-      alert('Failed to delete cartridge');
+      alert('Не удалось удалить картридж');
     }
   };
 
@@ -75,56 +84,56 @@ export default function CartridgesPage() {
     <div className="cartridges-page">
       <div className="page-header">
         <div>
-          <h1>Cartridges</h1>
-          <p className="subtitle">Manage printer cartridges and their maintenance records</p>
+          <h1>Картриджи</h1>
+          <p className="subtitle">Управление картриджами и записями по обслуживанию</p>
         </div>
         {(user?.role === 'admin' || user?.role === 'editor') && (
           <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
-            {showForm ? '✕ Cancel' : '+ Add Cartridge'}
+            {showForm ? '✕ Отмена' : '+ Добавить картридж'}
           </button>
         )}
       </div>
 
       {showForm && (
         <div className="form-card">
-          <h2>New Cartridge</h2>
+          <h2>Новый картридж</h2>
           <form onSubmit={handleCreate} className="inline-form">
             <div className="form-row">
               <div className="form-group">
-                <label>Name *</label>
+                <label>Название *</label>
                 <input
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="e.g. HP LaserJet 85A"
+                  placeholder="Например, HP LaserJet 85A"
                   required
                 />
               </div>
               <div className="form-group">
-                <label>Model *</label>
+                <label>Модель *</label>
                 <input
                   type="text"
                   value={form.model}
                   onChange={(e) => setForm({ ...form, model: e.target.value })}
-                  placeholder="e.g. CE285A"
+                  placeholder="Например, CE285A"
                   required
                 />
               </div>
               <div className="form-group">
-                <label>Serial Number</label>
+                <label>Серийный номер</label>
                 <input
                   type="text"
                   value={form.serial_number}
                   onChange={(e) =>
                     setForm({ ...form, serial_number: e.target.value })
                   }
-                  placeholder="Optional"
+                  placeholder="Необязательно"
                 />
               </div>
             </div>
             {formError && <div className="error-banner">{formError}</div>}
             <button type="submit" className="btn-primary" disabled={submitting}>
-              {submitting ? 'Creating...' : 'Create Cartridge'}
+              {submitting ? 'Создание...' : 'Создать картридж'}
             </button>
           </form>
         </div>
@@ -136,10 +145,10 @@ export default function CartridgesPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, model, or serial number..."
+            placeholder="Поиск по названию, модели или серийному номеру..."
             className="search-input"
           />
-          <button type="submit" className="btn-search">Search</button>
+          <button type="submit" className="btn-search">Найти</button>
           {search && (
             <button
               type="button"
@@ -149,7 +158,7 @@ export default function CartridgesPage() {
                 fetchCartridges();
               }}
             >
-              Clear
+              Сброс
             </button>
           )}
         </form>
@@ -158,12 +167,12 @@ export default function CartridgesPage() {
       {error && <div className="error-banner">{error}</div>}
 
       {loading ? (
-        <div className="loading">Loading cartridges...</div>
+        <div className="loading">Загрузка картриджей...</div>
       ) : cartridges.length === 0 ? (
         <div className="empty-state">
           <span className="empty-icon">🖨️</span>
-          <p>No cartridges found</p>
-          {search && <p className="hint">Try a different search term</p>}
+          <p>Картриджи не найдены</p>
+          {search && <p className="hint">Попробуйте изменить запрос</p>}
         </div>
       ) : (
         <div className="cartridges-grid">
@@ -177,11 +186,13 @@ export default function CartridgesPage() {
               <div className="card-body">
                 <h3 className="card-title">{c.name}</h3>
                 <p className="card-model">{c.model}</p>
+                {c.formatted_number && <p className="card-serial">№ {c.formatted_number}</p>}
+                <p className="card-serial">Статус: {statusLabel[c.status]}</p>
                 {c.serial_number && (
                   <p className="card-serial">S/N: {c.serial_number}</p>
                 )}
                 <p className="card-date">
-                  Added: {new Date(c.created_at).toLocaleDateString()}
+                  Добавлен: {new Date(c.created_at).toLocaleDateString('ru-RU')}
                 </p>
               </div>
               {user?.role === 'admin' && (
@@ -191,9 +202,9 @@ export default function CartridgesPage() {
                     e.stopPropagation();
                     handleDelete(c.id, c.name);
                   }}
-                  title="Delete cartridge"
+                  title="Удалить картридж"
                 >
-                  ✕
+                  🗑️
                 </button>
               )}
             </div>

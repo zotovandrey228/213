@@ -49,15 +49,43 @@ export const getCartridges = (search?: string) =>
 export const getCartridge = (id: number) => api.get(`/cartridges/${id}`);
 export const createCartridge = (data: {
   name: string;
-  model: string;
+  model?: string;
   serial_number?: string;
+  region_id?: number;
+  number?: number;
+  comment?: string;
+  status?: 'refill' | 'ready_to_install' | 'installed' | 'broken';
 }) => api.post('/cartridges', data);
 export const updateCartridge = (
   id: number,
-  data: { name?: string; model?: string; serial_number?: string },
+  data: {
+    name?: string;
+    model?: string;
+    serial_number?: string;
+    region_id?: number;
+    number?: number;
+    comment?: string;
+    status?: 'refill' | 'ready_to_install' | 'installed' | 'broken';
+    status_reason?: string;
+  },
 ) => api.put(`/cartridges/${id}`, data);
 export const deleteCartridge = (id: number) =>
   api.delete(`/cartridges/${id}`);
+export const getCartridgeNextNumber = (regionId?: number) =>
+  api.get('/cartridges/next-number', {
+    params: regionId ? { region_id: regionId } : undefined,
+  });
+export const getCartridgeNameSuggestions = (query?: string) =>
+  api.get('/cartridges/name-suggestions', {
+    params: query ? { query } : undefined,
+  });
+
+// Regions
+export const getRegions = (search?: string) =>
+  api.get('/regions', { params: search ? { search } : undefined });
+export const createRegion = (data: { name: string; code: number }) =>
+  api.post('/regions', data);
+export const deleteRegion = (id: number) => api.delete(`/regions/${id}`);
 
 // Works
 export const getWorks = (cartridgeId: number) =>
@@ -66,6 +94,7 @@ export const createWork = (data: {
   cartridge_id: number;
   description: string;
   performed_at: string;
+  note?: string;
 }) => api.post('/works', data);
 export const deleteWork = (id: number) => api.delete(`/works/${id}`);
 

@@ -1,8 +1,8 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as TelegramBot from 'node-telegram-bot-api';
+import TelegramBot from 'node-telegram-bot-api';
 import axios from 'axios';
-import * as FormData from 'form-data';
+import FormData from 'form-data';
 import { UsersService } from '../users/users.service';
 import { CartridgesService } from '../cartridges/cartridges.service';
 import { WorksService } from '../works/works.service';

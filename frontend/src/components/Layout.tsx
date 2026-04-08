@@ -7,6 +7,12 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const roleLabel: Record<string, string> = {
+    admin: 'администратор',
+    editor: 'редактор',
+    viewer: 'наблюдатель',
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -24,24 +30,26 @@ export default function Layout() {
             to="/cartridges"
             className={location.pathname.startsWith('/cartridges') ? 'active' : ''}
           >
-            Cartridges
+            Картриджи
           </Link>
           {user?.role === 'admin' && (
             <Link
               to="/admin"
               className={location.pathname === '/admin' ? 'active' : ''}
             >
-              Admin Panel
+              Админ-панель
             </Link>
           )}
         </div>
         <div className="navbar-user">
           <span className={`user-badge role-${user?.role}`}>
             <span className="user-name">{user?.username}</span>
-            <span className={`role-tag role-${user?.role}`}>{user?.role}</span>
+            <span className={`role-tag role-${user?.role}`}>
+              {user?.role ? roleLabel[user.role] || user.role : ''}
+            </span>
           </span>
           <button className="btn-logout" onClick={handleLogout}>
-            Logout
+            Выйти
           </button>
         </div>
       </nav>

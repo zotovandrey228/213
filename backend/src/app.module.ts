@@ -7,10 +7,13 @@ import { CartridgesModule } from './cartridges/cartridges.module';
 import { WorksModule } from './works/works.module';
 import { NotesModule } from './notes/notes.module';
 import { TelegramModule } from './telegram/telegram.module';
+import { RegionsModule } from './regions/regions.module';
 import { User } from './users/user.entity';
 import { Cartridge } from './cartridges/cartridge.entity';
+import { CartridgeStatusLog } from './cartridges/cartridge-status-log.entity';
 import { Work } from './works/work.entity';
 import { Note } from './notes/note.entity';
+import { Region } from './regions/region.entity';
 
 @Module({
   imports: [
@@ -24,7 +27,7 @@ import { Note } from './notes/note.entity';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_DATABASE'),
-        entities: [User, Cartridge, Work, Note],
+        entities: [User, Cartridge, CartridgeStatusLog, Work, Note, Region],
         synchronize: true,
         options: {
           encrypt: false,
@@ -40,6 +43,7 @@ import { Note } from './notes/note.entity';
     CartridgesModule,
     WorksModule,
     NotesModule,
+    RegionsModule,
     TelegramModule,
   ],
 })

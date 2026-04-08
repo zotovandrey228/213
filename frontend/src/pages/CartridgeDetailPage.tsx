@@ -2,10 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   getCartridge,
-  createWork,
-  createNote,
   deleteWork,
-  deleteNote,
 } from '../api';
 import { useAuthStore } from '../store/authStore';
 import './CartridgeDetailPage.css';
@@ -18,15 +15,9 @@ interface User {
 interface Work {
   id: number;
   description: string;
+  note?: string;
   performed_at: string;
   performed_by?: User;
-  created_at: string;
-}
-
-interface Note {
-  id: number;
-  content: string;
-  created_by?: User;
   created_at: string;
 }
 
@@ -34,12 +25,32 @@ interface Cartridge {
   id: number;
   name: string;
   model: string;
+  number?: number;
+  formatted_number?: string;
   serial_number?: string;
+  status: 'refill' | 'ready_to_install' | 'installed' | 'broken';
+  status_logs?: Array<{
+    id: number;
+    from_status: 'refill' | 'ready_to_install' | 'installed' | 'broken';
+    to_status: 'refill' | 'ready_to_install' | 'installed' | 'broken';
+    reason?: string;
+    changed_at: string;
+    changed_by?: User;
+  }>;
   created_at: string;
   updated_at: string;
   works: Work[];
-  notes: Note[];
 }
+
+const statusLabel: Record<
+  'refill' | 'ready_to_install' | 'installed' | 'broken',
+  string
+> = {
+  refill: 'На заправке',
+  ready_to_install: 'Готов к установке',
+  installed: 'Установлен',
+  broken: 'Сломан',
+};
 
 export default function CartridgeDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -48,18 +59,7 @@ export default function CartridgeDetailPage() {
   const [cartridge, setCartridge] = useState<Cartridge | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'works' | 'notes'>('works');
-
-  const [workForm, setWorkForm] = useState({
-    description: '',
-    performed_at: new Date().toISOString().slice(0, 10),
-  });
-  const [workError, setWorkError] = useState('');
-  const [workSubmitting, setWorkSubmitting] = useState(false);
-
-  const [noteForm, setNoteForm] = useState({ content: '' });
-  const [noteError, setNoteError] = useState('');
-  const [noteSubmitting, setNoteSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<'works' | 'logs'>('works');
 
   const canEdit = user?.role === 'admin' || user?.role === 'editor';
 
@@ -70,7 +70,7 @@ export default function CartridgeDetailPage() {
       const res = await getCartridge(parseInt(id));
       setCartridge(res.data);
     } catch {
-      setError('Cartridge not found');
+      setError('Картридж не найден');
     } finally {
       setLoading(false);
     }
@@ -80,89 +80,67 @@ export default function CartridgeDetailPage() {
     fetchCartridge();
   }, [id]);
 
-  const handleAddWork = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setWorkError('');
-    setWorkSubmitting(true);
-    try {
-      await createWork({
-        cartridge_id: parseInt(id!),
-        description: workForm.description,
-        performed_at: new Date(workForm.performed_at).toISOString(),
-      });
-      setWorkForm({
-        description: '',
-        performed_at: new Date().toISOString().slice(0, 10),
-      });
-      fetchCartridge();
-    } catch (err: any) {
-      setWorkError(err.response?.data?.message || 'Failed to add work');
-    } finally {
-      setWorkSubmitting(false);
-    }
-  };
-
-  const handleAddNote = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setNoteError('');
-    setNoteSubmitting(true);
-    try {
-      await createNote({
-        cartridge_id: parseInt(id!),
-        content: noteForm.content,
-      });
-      setNoteForm({ content: '' });
-      fetchCartridge();
-    } catch (err: any) {
-      setNoteError(err.response?.data?.message || 'Failed to add note');
-    } finally {
-      setNoteSubmitting(false);
-    }
-  };
-
   const handleDeleteWork = async (workId: number) => {
-    if (!confirm('Delete this work entry?')) return;
+    if (!confirm('Удалить эту запись о работе?')) return;
     try {
       await deleteWork(workId);
       fetchCartridge();
     } catch {
-      alert('Failed to delete work');
+      alert('Не удалось удалить запись о работе');
     }
   };
 
-  const handleDeleteNote = async (noteId: number) => {
-    if (!confirm('Delete this note?')) return;
-    try {
-      await deleteNote(noteId);
-      fetchCartridge();
-    } catch {
-      alert('Failed to delete note');
-    }
-  };
-
-  if (loading) return <div className="loading">Loading...</div>;
-  if (error || !cartridge) return <div className="error-banner">{error || 'Not found'}</div>;
+  if (loading) return <div className="loading">Загрузка...</div>;
+  if (error || !cartridge) return <div className="error-banner">{error || 'Не найдено'}</div>;
 
   return (
     <div className="detail-page">
-      <div className="detail-header">
-        <button className="btn-back" onClick={() => navigate('/cartridges')}>
-          ← Back
-        </button>
-        <div className="detail-info">
-          <h1>
-            <span className="detail-icon">🖨️</span> {cartridge.name}
-          </h1>
-          <div className="detail-meta">
-            <span className="meta-badge model">{cartridge.model}</span>
-            {cartridge.serial_number && (
-              <span className="meta-badge serial">S/N: {cartridge.serial_number}</span>
-            )}
-            <span className="meta-badge date">
-              Added: {new Date(cartridge.created_at).toLocaleDateString()}
-            </span>
+      <div className="detail-header hero-card">
+        <div className="detail-header-main">
+          <button className="btn-back" onClick={() => navigate('/cartridges')}>
+            ← Назад
+          </button>
+          <div className="detail-info">
+            <h1>
+              <span className="detail-icon">🖨️</span> {cartridge.name}
+            </h1>
+            <div className="detail-meta">
+              <span className="meta-badge model">{cartridge.model}</span>
+              {cartridge.formatted_number && (
+                <span className="meta-badge serial">№ {cartridge.formatted_number}</span>
+              )}
+              {cartridge.serial_number && (
+                <span className="meta-badge serial">S/N: {cartridge.serial_number}</span>
+              )}
+              <span className="meta-badge date">
+                Добавлен: {new Date(cartridge.created_at).toLocaleDateString('ru-RU')}
+              </span>
+              <span className={`meta-badge status status-${cartridge.status}`}>
+                Статус: {statusLabel[cartridge.status]}
+              </span>
+            </div>
           </div>
         </div>
+
+        {canEdit && (
+          <div className="detail-header-actions">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => navigate(`/cartridges/${id}/new-record`)}
+            >
+              Добавить запись
+            </button>
+
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => navigate(`/cartridges/${id}/change-status`)}
+            >
+              Изменить статус
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="tabs">
@@ -170,65 +148,27 @@ export default function CartridgeDetailPage() {
           className={`tab ${activeTab === 'works' ? 'active' : ''}`}
           onClick={() => setActiveTab('works')}
         >
-          🔧 Works ({cartridge.works.length})
+          🔧 Работы ({cartridge.works.length})
         </button>
         <button
-          className={`tab ${activeTab === 'notes' ? 'active' : ''}`}
-          onClick={() => setActiveTab('notes')}
+          className={`tab ${activeTab === 'logs' ? 'active' : ''}`}
+          onClick={() => setActiveTab('logs')}
         >
-          📝 Notes ({cartridge.notes.length})
+          🧾 Логи статусов ({cartridge.status_logs?.length || 0})
         </button>
       </div>
 
       {activeTab === 'works' && (
         <div className="tab-content">
-          {canEdit && (
-            <div className="form-card">
-              <h3>Add Work Entry</h3>
-              <form onSubmit={handleAddWork} className="entry-form">
-                <div className="form-group">
-                  <label>Description *</label>
-                  <textarea
-                    value={workForm.description}
-                    onChange={(e) =>
-                      setWorkForm({ ...workForm, description: e.target.value })
-                    }
-                    placeholder="What maintenance was performed?"
-                    rows={3}
-                    required
-                  />
-                </div>
-                <div className="form-group" style={{ maxWidth: '220px' }}>
-                  <label>Date *</label>
-                  <input
-                    type="date"
-                    value={workForm.performed_at}
-                    onChange={(e) =>
-                      setWorkForm({ ...workForm, performed_at: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-                {workError && <div className="error-banner">{workError}</div>}
-                <button
-                  type="submit"
-                  className="btn-primary"
-                  disabled={workSubmitting}
-                >
-                  {workSubmitting ? 'Adding...' : 'Add Work'}
-                </button>
-              </form>
-            </div>
-          )}
-
           {cartridge.works.length === 0 ? (
             <div className="empty-state">
               <span className="empty-icon">🔧</span>
-              <p>No work records yet</p>
+              <p>Пока нет записей о работах</p>
             </div>
           ) : (
             <div className="entries-list">
               {cartridge.works
+                .slice()
                 .sort(
                   (a, b) =>
                     new Date(b.performed_at).getTime() -
@@ -238,24 +178,23 @@ export default function CartridgeDetailPage() {
                   <div key={w.id} className="entry-card">
                     <div className="entry-header">
                       <span className="entry-date">
-                        📅 {new Date(w.performed_at).toLocaleDateString()}
+                        📅 {new Date(w.performed_at).toLocaleDateString('ru-RU')}
                       </span>
                       {w.performed_by && (
-                        <span className="entry-author">
-                          👤 {w.performed_by.username}
-                        </span>
+                        <span className="entry-author">👤 {w.performed_by.username}</span>
                       )}
                       {canEdit && (
                         <button
                           className="btn-delete-entry"
                           onClick={() => handleDeleteWork(w.id)}
-                          title="Delete work"
+                          title="Удалить запись"
                         >
                           ✕
                         </button>
                       )}
                     </div>
                     <p className="entry-content">{w.description}</p>
+                    {w.note && <p className="entry-content note-inline">Примечание: {w.note}</p>}
                   </div>
                 ))}
             </div>
@@ -263,75 +202,36 @@ export default function CartridgeDetailPage() {
         </div>
       )}
 
-      {activeTab === 'notes' && (
+      {activeTab === 'logs' && (
         <div className="tab-content">
-          {canEdit && (
-            <div className="form-card">
-              <h3>Add Note</h3>
-              <form onSubmit={handleAddNote} className="entry-form">
-                <div className="form-group">
-                  <label>Note *</label>
-                  <textarea
-                    value={noteForm.content}
-                    onChange={(e) =>
-                      setNoteForm({ content: e.target.value })
-                    }
-                    placeholder="Enter note text..."
-                    rows={3}
-                    required
-                  />
-                </div>
-                {noteError && <div className="error-banner">{noteError}</div>}
-                <button
-                  type="submit"
-                  className="btn-primary"
-                  disabled={noteSubmitting}
-                >
-                  {noteSubmitting ? 'Adding...' : 'Add Note'}
-                </button>
-              </form>
-            </div>
-          )}
-
-          {cartridge.notes.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon">📝</span>
-              <p>No notes yet</p>
-            </div>
-          ) : (
-            <div className="entries-list">
-              {cartridge.notes
-                .sort(
-                  (a, b) =>
-                    new Date(b.created_at).getTime() -
-                    new Date(a.created_at).getTime(),
-                )
-                .map((n) => (
-                  <div key={n.id} className="entry-card note-card">
-                    <div className="entry-header">
-                      <span className="entry-date">
-                        📅 {new Date(n.created_at).toLocaleDateString()}
-                      </span>
-                      {n.created_by && (
-                        <span className="entry-author">
-                          👤 {n.created_by.username}
+          <div className="form-card glass-card">
+            <h3>Журнал изменения статуса</h3>
+            {!cartridge.status_logs || cartridge.status_logs.length === 0 ? (
+              <p className="entry-content muted">Изменений статуса пока нет</p>
+            ) : (
+              <div className="entries-list compact">
+                {cartridge.status_logs
+                  .slice()
+                  .sort((a, b) => new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime())
+                  .map((log) => (
+                    <div key={log.id} className="entry-card timeline-card">
+                      <div className="entry-header">
+                        <span className="entry-date">
+                          📅 {new Date(log.changed_at).toLocaleString('ru-RU')}
                         </span>
-                      )}
-                      {canEdit && (
-                        <button
-                          className="btn-delete-entry"
-                          onClick={() => handleDeleteNote(n.id)}
-                          title="Delete note"
-                        >
-                          ✕
-                        </button>
-                      )}
+                        <span className="entry-author">
+                          {statusLabel[log.from_status]} → {statusLabel[log.to_status]}
+                        </span>
+                        {log.changed_by && (
+                          <span className="entry-author">👤 {log.changed_by.username}</span>
+                        )}
+                      </div>
+                      {log.reason && <p className="entry-content">Причина: {log.reason}</p>}
                     </div>
-                    <p className="entry-content">{n.content}</p>
-                  </div>
-                ))}
-            </div>
-          )}
+                  ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

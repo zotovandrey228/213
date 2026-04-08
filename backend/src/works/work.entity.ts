@@ -23,6 +23,9 @@ export class Work {
   @Column({ type: 'nvarchar', length: 'max' })
   description: string;
 
+  @Column({ type: 'nvarchar', length: 'max', nullable: true })
+  note: string;
+
   @Column({ name: 'performed_at' })
   performed_at: Date;
 

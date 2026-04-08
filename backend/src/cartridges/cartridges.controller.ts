@@ -9,6 +9,7 @@ import {
   Query,
   ParseIntPipe,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -27,6 +28,18 @@ export class CartridgesController {
     return this.cartridgesService.findAll(search);
   }
 
+  @Get('next-number')
+  @Roles('admin', 'editor')
+  getNextNumber(@Query('region_id') regionId?: string) {
+    const parsedRegionId = regionId ? parseInt(regionId, 10) : undefined;
+    return this.cartridgesService.getNextNumber(parsedRegionId);
+  }
+
+  @Get('name-suggestions')
+  getNameSuggestions(@Query('query') query?: string) {
+    return this.cartridgesService.getNameSuggestions(query);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.cartridgesService.findOne(id);
@@ -43,8 +56,9 @@ export class CartridgesController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateCartridgeDto,
+    @Req() req: any,
   ) {
-    return this.cartridgesService.update(id, dto);
+    return this.cartridgesService.update(id, dto, req.user?.sub);
   }
 
   @Delete(':id')
