@@ -1,0 +1,68 @@
+version: '3.9'
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: cartridge_db
+    environment:
+      SA_PASSWORD: ${DB_PASSWORD:-YourStrong@Password123}
+      ACCEPT_EULA: Y
+      MSSQL_PID: Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "${DB_PASSWORD:-YourStrong@Password123}" -Q "SELECT 1" || exit 1
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SA_PASSWORD: ${DB_PASSWORD:-YourStrong@Password123}
+    entrypoint: >
+      bash -c "
+        /opt/mssql-tools/bin/sqlcmd -S db -U sa -P '${DB_PASSWORD:-YourStrong@Password123}'
+        -Q \"IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = '${DB_DATABASE:-cartridge_db}')
+             CREATE DATABASE [${DB_DATABASE:-cartridge_db}]\"
+        && echo 'Database created or already exists'
+      "
+    restart: "no"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cartridge_backend
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 1433
+      NODE_ENV: production
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cartridge_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mssql_data:
