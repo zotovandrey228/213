@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Учет картриджей</title>
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <div class="ambient"></div>
+
+    <main class="app-shell">
+      <section id="login-screen" class="login-wrap">
+        <div class="login-card">
+          <p class="kicker">Cartridge System</p>
+          <h1>Учет картриджей</h1>
+          <p class="subtitle">Современная full-stack система на PHP</p>
+          <form id="login-form" class="form-grid">
+            <label>
+              Логин
+              <input id="login-username" type="text" required />
+            </label>
+            <label>
+              Пароль
+              <input id="login-password" type="password" required />
+            </label>
+            <button type="submit">Войти</button>
+            <p id="login-error" class="error-line"></p>
+          </form>
+        </div>
+      </section>
+
+      <section id="app-screen" class="hidden">
+        <header class="topbar glass">
+          <div class="brand">
+            <h2>Учет картриджей</h2>
+            <p id="me-block" class="muted"></p>
+          </div>
+          <nav class="menu" id="menu"></nav>
+          <button id="logout-btn" class="ghost">Выйти</button>
+        </header>
+
+        <section id="page-home" class="page hidden"></section>
+        <section id="page-create" class="page hidden"></section>
+        <section id="page-regions" class="page hidden"></section>
+        <section id="page-detail" class="page hidden"></section>
+        <section id="page-work" class="page hidden"></section>
+        <section id="page-status" class="page hidden"></section>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
